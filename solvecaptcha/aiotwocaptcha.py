@@ -100,7 +100,7 @@ class AIOTwoCaptcha(AIOTwoCaptchaBase):
         self.key = key
         self.timeout = timeout
 
-    def captcha(self, encoded_string: Base64Str, textinstructions: str, wait: bool = True, **kwargs) -> AIOTwoCaptchaResponse:
+    async def captcha(self, encoded_string: Base64Str, textinstructions: str, wait: bool = True, **kwargs) -> AIOTwoCaptchaResponse:
         """Solve a regular captcha
 
         Parameters
@@ -143,7 +143,7 @@ class AIOTwoCaptcha(AIOTwoCaptchaBase):
 
         return response
 
-    def textcaptcha(self, text: str, lang: str = "en", language: int = 0, wait: bool = True, **kwargs) -> AIOTwoCaptchaResponse:
+    async def textcaptcha(self, text: str, lang: str = "en", language: int = 0, wait: bool = True, **kwargs) -> AIOTwoCaptchaResponse:
         """Solve a Text Captcha.
 
         https://2captcha.com/2captcha-api#solving_text_captcha
@@ -213,7 +213,7 @@ class AIOTwoCaptcha(AIOTwoCaptchaBase):
 
         return response
 
-    def hcaptcha(self, sitekey: str, pageurl: str, wait: bool = True, **kwargs) -> AIOTwoCaptchaResponse:
+    async def hcaptcha(self, sitekey: str, pageurl: str, wait: bool = True, **kwargs) -> AIOTwoCaptchaResponse:
         id = await self._in("hcaptcha", sitekey=sitekey, pageurl=pageurl, **kwargs)
 
         response = AIOTwoCaptchaResponse(self.key, id, self.timeout)
@@ -224,7 +224,7 @@ class AIOTwoCaptcha(AIOTwoCaptchaBase):
 
         return response
 
-    def capy(self, captchakey: str, pageurl: str, apiserver: str, wait: bool = True, **kwargs) -> AIOTwoCaptchaResponse:
+    async def capy(self, captchakey: str, pageurl: str, apiserver: str, wait: bool = True, **kwargs) -> AIOTwoCaptchaResponse:
         id = await self._in("capy", captchakey=captchakey, pageurl=pageurl, apiserver=apiserver, **kwargs)
 
         response = AIOTwoCaptchaResponse(self.key, id, self.timeout)
