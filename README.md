@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="./images/SolveCaptcha.png"/>
+    <img src="images/SolveCaptcha.png"/>
     <p>SolveCaptcha is a Synchronous API wrapper for 2captcha with, planned future support for anti-captcha, for Python 3.6+</p>
 </div>
 
