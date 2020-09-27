@@ -1,12 +1,7 @@
-"""twocaptcha.py - Synchronous Module for interacting
-wit the 2Captcha API.
-"""
-import time
-import json
-from requests.api import get, post
+import asyncio
+from aiohttp import ClientSession
 
 import solvecaptcha.errors as errors
-
 
 # Typing
 ApiKey = str
@@ -17,10 +12,22 @@ BASE = "https://2captcha.com"
 SOFT_ID = "2621"
 
 
-class TwoCaptchaBase:
+# Simple GET/POST wrappers for aiohttp
+async def get(url, **kwargs) -> str:
+    async with ClientSession() as session:
+        r = await session.get(url, **kwargs)
+        return await r.text()
+
+async def post(url, **kwargs) -> str:
+    async with ClientSession() as session:
+        r = await session.post(url, **kwargs)
+        return await r.text()
+
+
+class AIOTwoCaptchaBase:
     key = None
 
-    def _in(self, method: str = None, **kwargs):
+    async def _in(self, method: str = None, **kwargs):
         params = {"key": self.key, "method": method, "soft_id": SOFT_ID}
         if not method:
             params.pop("method")
@@ -28,25 +35,24 @@ class TwoCaptchaBase:
         if kwargs:
             params = {**params, **kwargs}
 
-        with post(f"{BASE}/in.php", data=params) as r:
-            if "ERROR" in r.text:
-                raise errors.TwoCaptchaInputError(r.text)
-            return r.text.replace("OK|", "")
+        r = await post(f"{BASE}/in.php", data=params)
+        if "ERROR" in r:
+            raise errors.TwoCaptchaInputError(r)
+        return r.replace("OK|", "")
 
-    def _res(self, action: str, **kwargs):
+    async def _res(self, action: str, **kwargs):
         params = {"key": self.key, "action": action}
         if kwargs:
             params = {**params, **kwargs}
 
-        with get(f"{BASE}/res.php", params=params) as r:
-            if "ERROR" in r.text:
-                raise errors.TwoCaptchaResponseError(r.text)
-            return r.text.replace("OK|", "")
+        r = await get(f"{BASE}/res.php", params=params)
+        if "ERROR" in r:
+            raise errors.TwoCaptchaResponseError(r)
+        return r.replace("OK|", "")
 
 
-class TwoCaptchaResponse(TwoCaptchaBase):
+class AIOTwoCaptchaResponse(AIOTwoCaptchaBase):
     __slots__ = ("key", "request_id", "timeout", "solution")
-
     def __init__(self, key: ApiKey, request_id: str, timeout: int = 300):
         super().__init__()
 
@@ -56,28 +62,28 @@ class TwoCaptchaResponse(TwoCaptchaBase):
 
         self.solution = None
 
-    def get_solution(self):
+    async def get_solution(self):
         for _ in range(self.timeout // 5):
-            r = self._res("get", id=self.request_id)
+            r = await self._res("get", id=self.request_id)
             if "CAPCHA_NOT_READY" in r:
-                time.sleep(5)
+                await asyncio.sleep(5)
                 continue
             self.solution = r
             return self
 
         raise errors.CaptchaTimeoutError("Did not recieve captcha solution in set time")
 
-    def report_good(self):
-        self._res("reportgood", id=self.request_id)
+    async def report_good(self):
+        await self._res("reportgood", id=self.request_id)
 
-    def report_bad(self):
-        self._res("reportbad", id=self.request_id)
+    async def report_bad(self):
+        await self._res("reportbad", id=self.request_id)
 
     def __repr__(self):
         return self.solution
 
 
-class TwoCaptcha(TwoCaptchaBase):
+class AIOTwoCaptcha(AIOTwoCaptchaBase):
     __slots__ = ("key", "timeout")
 
     def __init__(self, key: ApiKey, timeout: int = 300):
@@ -94,8 +100,7 @@ class TwoCaptcha(TwoCaptchaBase):
         self.key = key
         self.timeout = timeout
 
-
-    def captcha(self, encoded_string: Base64Str, textinstructions: str, wait: bool = True, **kwargs) -> TwoCaptchaResponse:
+    def captcha(self, encoded_string: Base64Str, textinstructions: str, wait: bool = True, **kwargs) -> AIOTwoCaptchaResponse:
         """Solve a regular captcha
 
         Parameters
@@ -128,17 +133,17 @@ class TwoCaptcha(TwoCaptchaBase):
         -------
         TwoCaptchaResponse
         """
-        id = self._in("base64", body=encoded_string, textinstructions=textinstructions, **kwargs)
+        id = await self._in("base64", body=encoded_string, textinstructions=textinstructions, **kwargs)
 
-        response = TwoCaptchaResponse(self.key, id, self.timeout)
+        response = AIOTwoCaptchaResponse(self.key, id, self.timeout)
 
         if wait:
-            time.sleep(5)
-            return response.get_solution()
+            await asyncio.sleep(5)
+            return await response.get_solution()
 
         return response
 
-    def textcaptcha(self, text: str, lang: str = "en", language: int = 0, wait: bool = True, **kwargs) -> TwoCaptchaResponse:
+    def textcaptcha(self, text: str, lang: str = "en", language: int = 0, wait: bool = True, **kwargs) -> AIOTwoCaptchaResponse:
         """Solve a Text Captcha.
 
         https://2captcha.com/2captcha-api#solving_text_captcha
@@ -163,71 +168,69 @@ class TwoCaptcha(TwoCaptchaBase):
         -------
         TwoCaptchaResponse
         """
-        id = self._in(textcaptcha=text, language=language, **kwargs)
+        id = await self._in(textcaptcha=text, language=language, **kwargs)
 
-        response = TwoCaptchaResponse(self.key, id, self.timeout)
+        response = AIOTwoCaptchaResponse(self.key, id, self.timeout)
 
         if wait:
-            time.sleep(5)
-            return response.get_solution()
+            await asyncio.sleep(5)
+            return await response.get_solution()
 
         return response
 
-    def recaptcha_v2(self, googlekey: str, pageurl: str, wait: bool = True, **kwargs) -> TwoCaptchaResponse:
-        """Solve ReCaptcha V2
+    async def recaptcha_v2(self, googlekey: str, pageurl: str, wait: bool = True, **kwargs) -> AIOTwoCaptchaResponse:
+        """Solve a Text Captcha.
+
+        https://2captcha.com/2captcha-api#solving_text_captcha
+        > Text Captcha is a type of captcha that is represented as text and doesn't contain images.
+        > Usually you have to answer a question to pass the verification.
 
         Parameters
         ----------
-        googlekey : str
-            Value of k or data-sitekey parameter, example: 6LfP0CITAAAAAHq9FOgCo7v_fb0-pmmH9VW3ziFs
-        pageurl : str
-            Full URL of the page where the ReCaptcha is present
+        text : str
+            The text captchas contents, e.g. "What day is today?"
+        lang : str, optional
+            Language code, availabe language codes: 2captcha.com/2captcha-api#language, by default "en"
+        language : int, optional
+            Alphabet in use, 0 - not specified,
+                             1 - Cyrillic (Russian) captcha,
+                             2 - Latin captchai
+            by default 0
         time_limit : int, optional
             Time limit until response is recieved, in seconds, by default 300
 
         Returns
         -------
-        TwoCaptchaResponse
+        TwoCaptchaRespons
         """
-        id = self._in("userrecaptcha", googlekey=googlekey, pageurl=pageurl, **kwargs)
+        id = await self._in("userrecaptcha", googlekey=googlekey, pageurl=pageurl, **kwargs)
 
-        response = TwoCaptchaResponse(self.key, id, self.timeout)
+        response = AIOTwoCaptchaResponse(self.key, id, self.timeout)
 
         if wait:
-            time.sleep(20)
-            return response.get_solution()
+            await asyncio.sleep(20)
+            return await response.get_solution()
 
         return response
 
-    def hcaptcha(self, sitekey: str, pageurl: str, wait: bool = True, **kwargs) -> TwoCaptchaResponse:
-        id = self._in("hcaptcha", sitekey=sitekey, pageurl=pageurl, **kwargs)
+    def hcaptcha(self, sitekey: str, pageurl: str, wait: bool = True, **kwargs) -> AIOTwoCaptchaResponse:
+        id = await self._in("hcaptcha", sitekey=sitekey, pageurl=pageurl, **kwargs)
 
-        response = TwoCaptchaResponse(self.key, id, self.timeout)
+        response = AIOTwoCaptchaResponse(self.key, id, self.timeout)
 
         if wait:
-            time.sleep(20)
-            return response.get_solution()
+            await asyncio.sleep(20)
+            return await response.get_solution()
 
         return response
 
-    def capy(self, captchakey: str, pageurl: str, apiserver: str, wait: bool = True, **kwargs) -> TwoCaptchaResponse:
-        id = self._in("capy", captchakey=captchakey, pageurl=pageurl, apiserver=apiserver, **kwargs)
+    def capy(self, captchakey: str, pageurl: str, apiserver: str, wait: bool = True, **kwargs) -> AIOTwoCaptchaResponse:
+        id = await self._in("capy", captchakey=captchakey, pageurl=pageurl, apiserver=apiserver, **kwargs)
 
-        response = TwoCaptchaResponse(self.key, id, self.timeout)
+        response = AIOTwoCaptchaResponse(self.key, id, self.timeout)
 
         if wait:
-            time.sleep(20)
-            return response.get_solution()
+            await asyncio.sleep(20)
+            return await response.get_solution()
 
         return response
-
-    def _get_balance(self) -> float:
-        r = self._res("getbalance")
-        return float(r)
-
-    @property
-    def balance(self) -> float:
-        return self._get_balance()
-
-    def __repr__(self):
-        return f"<TwoCaptcha balance={self.balance}>"
