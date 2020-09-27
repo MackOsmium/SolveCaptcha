@@ -45,14 +45,27 @@ class TwoCaptchaBase:
 
 
 class TwoCaptchaResponse(TwoCaptchaBase):
-    __slots__ = ("key", "request_id", "solution")
+    __slots__ = ("key", "request_id", "timeout","solution")
 
-    def __init__(self, key: ApiKey, request_id: str, solution: str = None):
+    def __init__(self, key: ApiKey, request_id: str, timeout: int = 300):
         super().__init__()
 
         self.key = key
         self.request_id = request_id
-        self.solution = solution
+        self.timeout = timeout
+
+        self.solution = None
+
+    def get_solution(self):
+        for _ in range(self.timeout // 5):
+            r = self._res("get", id=self.request_id)
+            if "CAPCHA_NOT_READY" in r:
+                time.sleep(5)
+                continue
+            self.solution = r
+            return self
+
+        raise errors.CaptchaTimeoutError("Did not recieve captcha solution in set time")
 
     def report_good(self):
         self._res("reportgood", id=self.request_id)
@@ -68,8 +81,7 @@ class TwoCaptcha(TwoCaptchaBase):
     __slots__ = ("key", "timeout")
 
     def __init__(self, key: ApiKey, timeout: int = 300):
-        """[summary]
-
+        """
         Parameters
         ----------
         key : ApiKey
@@ -82,17 +94,8 @@ class TwoCaptcha(TwoCaptchaBase):
         self.key = key
         self.timeout = timeout
 
-    def get_solution(self, id: int) -> TwoCaptchaResponse:
-        for _ in range(self.timeout // 5):
-            r = self._res("get", id=id)
-            if "CAPCHA_NOT_READY" in r:
-                time.sleep(5)
-                continue
-            return r
 
-        raise errors.CaptchaTimeoutError("Did not recieve captcha solution in set time")
-
-    def captcha(self, encoded_string: Base64Str, textinstructions: str, **kwargs) -> TwoCaptchaResponse:
+    def captcha(self, encoded_string: Base64Str, textinstructions: str, wait: bool = True, **kwargs) -> TwoCaptchaResponse:
         """Solve a regular captcha
 
         Parameters
@@ -129,11 +132,12 @@ class TwoCaptcha(TwoCaptchaBase):
 
         time.sleep(5)
 
-        solution = self.get_solution(id)
-        response = TwoCaptchaResponse(self.key, id, solution)
+        response = TwoCaptchaResponse(self.key, id, self.timeout)
+        if wait:
+            return response.get_solution()
         return response
 
-    def textcaptcha(self, text: str, lang: str = "en", language: int = 0, **kwargs) -> TwoCaptchaResponse:
+    def textcaptcha(self, text: str, lang: str = "en", language: int = 0, wait: bool = True, **kwargs) -> TwoCaptchaResponse:
         """Solve a Text Captcha.
 
         https://2captcha.com/2captcha-api#solving_text_captcha
@@ -162,17 +166,19 @@ class TwoCaptcha(TwoCaptchaBase):
 
         time.sleep(5)
 
-        solution = self.get_solution(id)
-        response = TwoCaptchaResponse(self.key, id, solution)
+        response = TwoCaptchaResponse(self.key, id, self.timeout)
+        if wait:
+            return response.get_solution()
         return response
 
-    def recaptcha_v2(self, googlekey: str, pageurl: str, **kwargs) -> TwoCaptchaResponse:
+    def recaptcha_v2(self, googlekey: str, pageurl: str, wait: bool = True, **kwargs) -> TwoCaptchaResponse:
         """Solve ReCaptcha V2
+
         Parameters
         ----------
-        googlekey : [type]
+        googlekey : str
             Value of k or data-sitekey parameter, example: 6LfP0CITAAAAAHq9FOgCo7v_fb0-pmmH9VW3ziFs
-        pageurl : [type]
+        pageurl : str
             Full URL of the page where the ReCaptcha is present
         time_limit : int, optional
             Time limit until response is recieved, in seconds, by default 300
@@ -185,26 +191,29 @@ class TwoCaptcha(TwoCaptchaBase):
 
         time.sleep(20)
 
-        solution = self.get_solution(id)
-        response = TwoCaptchaResponse(self.key, id, solution)
+        response = TwoCaptchaResponse(self.key, id, self.timeout)
+        if wait:
+            return response.get_solution()
         return response
 
-    def hcaptcha(self, sitekey: str, pageurl: str, **kwargs) -> TwoCaptchaResponse:
+    def hcaptcha(self, sitekey: str, pageurl: str, wait: bool = True, **kwargs) -> TwoCaptchaResponse:
         id = self._in("hcaptcha", sitekey=sitekey, pageurl=pageurl, **kwargs)
 
         time.sleep(20)
 
-        solution = self.get_solution(id)
-        response = TwoCaptchaResponse(self.key, id, solution)
+        response = TwoCaptchaResponse(self.key, id, self.timeout)
+        if wait:
+            return response.get_solution()
         return response
 
-    def capy(self, captchakey: str, pageurl: str, apiserver: str, **kwargs) -> TwoCaptchaResponse:
+    def capy(self, captchakey: str, pageurl: str, apiserver: str, wait: bool = True, **kwargs) -> TwoCaptchaResponse:
         id = self._in("capy", captchakey=captchakey, pageurl=pageurl, apiserver=apiserver, **kwargs)
 
         time.sleep(20)
 
-        solution = json.loads(self.get_solution(id))
-        response = TwoCaptchaResponse(self.key, id, solution)
+        response = TwoCaptchaResponse(self.key, id, self.timeout)
+        if wait:
+            return response.get_solution()
         return response
 
     def _get_balance(self) -> float:

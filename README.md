@@ -25,7 +25,7 @@
 
 `pip install .`
 
-### Quick Example for ReCaptcha V2
+### Quick Examples for ReCaptcha V2
 
 ```python
 >>> from solvecaptcha import TwoCaptcha
@@ -33,7 +33,19 @@
 >>> print(twocaptcha)
 <TwoCaptcha balance=10.42>
 >>> response = twocaptcha.recaptcha_v2(googlekey, pageurl)
->>> # Post response.solution
+>>> # POST response.solution
+>>> response.report_good()  # Or response.report_bad()
+```
+
+Alternatively, you may not want to wait for the recaptcha solution instantly and instead, use the time it is being solved to do other processing. Then at a later time call `get_solution()` yourself.
+
+Example:
+
+```python
+>>> response = twocaptcha.recaptcha_v2(googlekey, pageurl, wait=False)
+>>> # Do expensive stuff here
+>>> response.get_solution()
+>>> # POST response.solution
 >>> response.report_good()  # Or response.report_bad()
 ```
 
