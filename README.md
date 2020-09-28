@@ -1,6 +1,6 @@
 <div align="center">
     <img src="https://raw.githubusercontent.com/MackOsmium/SolveCaptcha/master/images/solvecaptcha.png"/>
-    <p>SolveCaptcha is a Synchronous API wrapper for 2captcha with, planned future support for anti-captcha, for Python 3.6+</p>
+    <p>SolveCaptcha is a Async/Sync API wrapper for 2captcha with, planned future support for anti-captcha, for Python 3.6+</p>
 </div>
 
 ### Features
@@ -35,6 +35,16 @@
 >>> response = twocaptcha.recaptcha_v2(googlekey, pageurl)
 >>> # POST response.solution
 >>> response.report_good()  # Or response.report_bad()
+```
+
+Try it out the async module using `python3 -m asyncio`
+
+Example:
+
+```python
+>>> from solvecaptcha import AIOTwoCaptcha
+>>> twocaptcha = AIOTwoCaptcha(API_KEY)
+>>> response = await twocaptcha.recaptcha_v2(googlekey, pageurl)
 ```
 
 Alternatively, you may not want to wait for the recaptcha solution instantly and instead, use the time it is being solved to do other processing. Then at a later time call `get_solution()` yourself.

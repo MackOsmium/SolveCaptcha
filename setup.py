@@ -22,7 +22,7 @@ setup(
     author="Mack Waters",
     url='https://github.com/mackosmium/solvecaptcha',
     version="0.1",
-    description="Sync API wrapper for 2captcha.com",
+    description="Async/Sync API wrapper for 2captcha.com",
     packages=["solvecaptcha"],
     install_requires=requirements,
 )
