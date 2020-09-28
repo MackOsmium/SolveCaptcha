@@ -37,16 +37,6 @@
 >>> response.report_good()  # Or response.report_bad()
 ```
 
-Try it out the async module using `python3 -m asyncio`
-
-Example:
-
-```python
->>> from solvecaptcha import AIOTwoCaptcha
->>> twocaptcha = AIOTwoCaptcha(API_KEY)
->>> response = await twocaptcha.recaptcha_v2(googlekey, pageurl)
-```
-
 Alternatively, you may not want to wait for the recaptcha solution instantly and instead, use the time it is being solved to do other processing. Then at a later time call `get_solution()` yourself.
 
 Example:
@@ -58,6 +48,17 @@ Example:
 >>> # POST response.solution
 >>> response.report_good()  # Or response.report_bad()
 ```
+
+Try it out the async module using `python3 -m asyncio`
+
+Example:
+
+```python
+>>> from solvecaptcha import AIOTwoCaptcha
+>>> twocaptcha = AIOTwoCaptcha(API_KEY)
+>>> response = await twocaptcha.recaptcha_v2(googlekey, pageurl)
+```
+
 
 ### Contact
 
