@@ -27,7 +27,7 @@ or
 
 ```
 $ git clone https://github.com/mackosmium/solvecaptcha.git`
-$ cd SolveCaptcha`
+$ cd SolveCaptcha
 $ pip install .
 ```
 
