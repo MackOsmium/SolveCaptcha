@@ -26,7 +26,7 @@ $ pip install git+git://github.com/MackOsmium/SolveCaptcha
 or
 
 ```
-$ git clone https://github.com/mackosmium/solvecaptcha.git`
+$ git clone https://github.com/mackosmium/solvecaptcha.git
 $ cd SolveCaptcha
 $ pip install .
 ```
