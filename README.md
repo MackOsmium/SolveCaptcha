@@ -19,11 +19,17 @@
 
 ### Install
 
-`git clone https://github.com/mackosmium/solvecaptcha.git`
+```
+$ pip install git+git://github.com/MackOsmium/SolveCaptcha
+```
 
-`cd SolveCaptcha`
+or
 
-`pip install .`
+```
+$ git clone https://github.com/mackosmium/solvecaptcha.git`
+$ cd SolveCaptcha`
+$ pip install .
+```
 
 ### Quick Examples for ReCaptcha V2
 
