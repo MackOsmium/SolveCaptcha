@@ -64,20 +64,3 @@ Example:
 >>> twocaptcha = AIOTwoCaptcha(API_KEY)
 >>> response = await twocaptcha.recaptcha_v2(googlekey, pageurl)
 ```
-
-
-### Contact
-
-If you need help integrating SolveCaptcha into your current projects feel free to contact me here:
-
-<a href="https://keybase.io/mackwaters">keybase.io/MackWaters</a>
-
-### Donate
-
-Bitcoin: `3HbSzntJ3qUruXtXzdXa5xHZwghk4dYaHa`
-
-Ethereum: `0x5C576E91040bb1410014FBb93E3413332cBF0FBA`
-
-Zcash: `t1db9gtU2dQ39iHogbQ9CP3QGaKMa1Gd2Bj`
-
-Monero: `45kQH2tzrst8uLZwyEfGCqEiBwuPH3iEH9z1gnPHP2QYim5cb5WYrpWXdoAp1gPMSzDFcyzTrZgoqT4VcLJc4U4dSFdo3kc`
